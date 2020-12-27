@@ -53,61 +53,54 @@ namespace directoryserver
                 // log the incoming request
                 Console.WriteLine($"{System.Threading.Thread.CurrentThread.ManagedThreadId} {DateTime.Now:o} \"{context.Request.HttpMethod} {contenttype} {context.Request.RawUrl} {options.Protocol}/{context.Request.ProtocolVersion}\" {context.Response.StatusCode}");
 
-                // get content
+                // read file from disk
                 byte[] buffer;
+                var path = "";
+                var responseString = "";
+                var filename = context.Request.RawUrl;
 
-                // text
-                if (string.IsNullOrWhiteSpace(contenttype) ||
-                    string.Equals(contenttype, "text/html") ||
-                    string.Equals(contenttype, "*/*") ||
-                    string.Equals(contenttype, "text/css"))
+                // default file
+                if (string.Equals(context.Request.RawUrl, "/"))
                 {
-                    // read file from disk
-                    var path = "";
-                    var responseString = "";
-                    var filename = context.Request.RawUrl;
-
-                    // default file
-                    if (string.Equals(context.Request.RawUrl, "/"))
+                    foreach (var file in new string[] { "index.html", "index.htm", "default.html", "default.htm" })
                     {
-                        foreach(var file in new string[] { "index.html", "index.htm", "default.html", "default.htm" })
+                        path = Path.Combine(options.Directory, file);
+                        if (File.Exists(path))
                         {
-                            path = Path.Combine(options.Directory, file);
-                            if (File.Exists(path))
-                            {
-                                filename = file;
-                                break;
-                            }
+                            filename = file;
+                            break;
                         }
                     }
+                }
 
-                    if (filename.Length > 1 && filename[0] == '/') filename = filename.Substring(1);
+                // remove leading '/'
+                if (filename.Length > 1 && filename[0] == '/') filename = filename.Substring(1);
 
-                    path = Path.Combine(options.Directory, filename);
+                // create path
+                path = Path.Combine(options.Directory, filename);
 
-                    // read from disk
-                    if (File.Exists(path))
+                // check if the path is absolute or trying to escape out of the original directory
+                if (!path.StartsWith(options.Directory)) path = "";
+
+                // read from disk
+                if (File.Exists(path))
+                {
+                    using (var stream = File.OpenRead(path))
                     {
-                        responseString = File.ReadAllText(path);
+                        buffer = new byte[stream.Length];
+                        await stream.ReadAsync(buffer);
                     }
-                    else
-                    {
-                        responseString = $"<HTML><BODY>File not found {path}</BODY></HTML>";
-                        contenttype = "text/html";
-                    }
-
-                    // 
-                    buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
-                    context.Response.ContentEncoding = Encoding.UTF8;
-                    context.Response.ContentType = contenttype;
                 }
                 else
                 {
-                    throw new Exception($"Unknow content type : {contenttype}");
+                    responseString = $"<HTML><BODY>File not found {path}</BODY></HTML>";
+                    buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+                    contenttype = "text/html";
                 }
 
                 // write
                 context.Response.ContentLength64 = buffer.Length;
+                context.Response.ContentType = contenttype;
                 using (var output = context.Response.OutputStream)
                 {
                     await output.WriteAsync(buffer, 0, buffer.Length);
