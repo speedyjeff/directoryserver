@@ -22,11 +22,11 @@ namespace directoryserver
             var host = Dns.GetHostEntry("localhost");
             var ip = host.AddressList[0];
             var endpoint = new IPEndPoint(ip, options.Port);
-
             var http = new HttpListener();
-            http.Prefixes.Add($"http://{endpoint}/");
-            http.Start();
+            http.Prefixes.Add($"{options.Protocol}://{endpoint}/");
 
+            // start
+            http.Start();
             Console.WriteLine($"Servering {options.Protocol} on {endpoint} at '{options.Directory}' ...");
 
             // async handle the incoming requests
