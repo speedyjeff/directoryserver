@@ -55,10 +55,8 @@ namespace directoryserver
                     // log the incoming request
                     Console.WriteLine($"{System.Threading.Thread.CurrentThread.ManagedThreadId} {DateTime.Now:o} \"{context.Request.HttpMethod} {contenttype} {context.Request.RawUrl} {options.Protocol}/{context.Request.ProtocolVersion}\" {context.Response.StatusCode}");
 
-                    // read file from disk
-                    byte[] buffer;
+                    // get path to the local file
                     var path = "";
-                    var responseString = "";
                     var filename = context.Request.RawUrl;
 
                     // default file
@@ -78,13 +76,14 @@ namespace directoryserver
                     // remove leading '/'
                     if (filename.Length > 1 && filename[0] == '/') filename = filename.Substring(1);
 
-                    // create path
-                    path = Path.Combine(options.Directory, filename);
+                    // normalize path
+                    path = Path.GetFullPath(Path.Combine(options.Directory, filename));
 
                     // check if the path is absolute or trying to escape out of the original directory
                     if (!path.StartsWith(options.Directory)) path = "";
 
                     // read from disk
+                    byte[] buffer;
                     if (File.Exists(path))
                     {
                         using (var stream = File.OpenRead(path))
@@ -95,9 +94,10 @@ namespace directoryserver
                     }
                     else
                     {
-                        responseString = $"<HTML><BODY>File not found {filename}</BODY></HTML>";
+                        var responseString = $"<HTML><BODY>File not found {filename}</BODY></HTML>";
                         buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
                         contenttype = "text/html";
+                        context.Response.StatusCode = 404;
                     }
 
                     // write

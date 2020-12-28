@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.IO;
 
 namespace directoryserver
 {
@@ -32,7 +31,7 @@ namespace directoryserver
                 else if (string.Equals(args[i], "-dir", StringComparison.OrdinalIgnoreCase))
                 {
                     i++;
-                    if (i < args.Length) options.Directory = args[i];
+                    if (i < args.Length) options.Directory = Path.GetFullPath(args[i]);
                 }
                 else if (string.Equals(args[i], "-port", StringComparison.OrdinalIgnoreCase))
                 {
