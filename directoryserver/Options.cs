@@ -9,6 +9,7 @@ namespace directoryserver
         public int Port;
         public string Protocol;
         public bool ShowHelp;
+        public bool ListenExternal;
 
         public Options()
         {
@@ -16,6 +17,13 @@ namespace directoryserver
             Port = 8000;
             Protocol = "HTTP";
             ShowHelp = false;
+            ListenExternal = false;
+        }
+
+        public static int DisplayHelp()
+        {
+            Console.WriteLine("./directoryserver [-dir directory] [-port ####] [-listen [local|external]]");
+            return 1;
         }
 
         public static Options Parse(string[] args)
@@ -39,6 +47,15 @@ namespace directoryserver
                     if (i < args.Length)
                     {
                         if (Int32.TryParse(args[i], out int port)) options.Port = port;
+                    }
+                }
+                else if (string.Equals(args[i], "-listen", StringComparison.OrdinalIgnoreCase))
+                {
+                    i++;
+                    if (i < args.Length)
+                    {
+                        if (string.Equals(args[i], "local", StringComparison.OrdinalIgnoreCase)) options.ListenExternal = false;
+                        else if (string.Equals(args[i], "external", StringComparison.OrdinalIgnoreCase)) options.ListenExternal = true;
                     }
                 }
                 else

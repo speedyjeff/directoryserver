@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace directoryserver
@@ -12,15 +13,26 @@ namespace directoryserver
             var options = Options.Parse(args);
 
             // show help
-            if (options.ShowHelp)
-            {
-                Console.WriteLine("./directoryserver [-dir directory] [-port ####]");
-                return 1;
-            }
+            if (options.ShowHelp) return Options.DisplayHelp();
 
             // initialize
-            var host = Dns.GetHostEntry("localhost");
-            var ip = host.AddressList[0];
+            var host = options.ListenExternal ? Dns.GetHostEntry(Dns.GetHostName()) : Dns.GetHostEntry("localhost");
+            IPAddress ip = null;
+
+            // choose appropriate ip address
+            foreach (var lip in host.AddressList)
+            {
+                // ipv4
+                if (lip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    ip = lip;
+                    break;
+                }
+            }
+            if (ip == null && host.AddressList.Length >= 1) ip = host.AddressList[0];
+            if (ip == null) throw new Exception("Failed to get an ip address to listen too");
+
+            // start http lisenter
             var endpoint = new IPEndPoint(ip, options.Port);
             var http = new HttpListener();
             http.Prefixes.Add($"{options.Protocol}://{endpoint}/");
