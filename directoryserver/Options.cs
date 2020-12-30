@@ -10,6 +10,7 @@ namespace directoryserver
         public string Protocol;
         public bool ShowHelp;
         public bool ListenExternal;
+        public bool ShutdownOnEnter;
 
         public Options()
         {
@@ -18,11 +19,12 @@ namespace directoryserver
             Protocol = "HTTP";
             ShowHelp = false;
             ListenExternal = false;
+            ShutdownOnEnter = true;
         }
 
         public static int DisplayHelp()
         {
-            Console.WriteLine("./directoryserver [-dir directory] [-port ####] [-listen [local|external]]");
+            Console.WriteLine("./directoryserver [-dir directory] [-port ####] [-listen [local|external]] [-noshutdown]");
             return 1;
         }
 
@@ -57,6 +59,10 @@ namespace directoryserver
                         if (string.Equals(args[i], "local", StringComparison.OrdinalIgnoreCase)) options.ListenExternal = false;
                         else if (string.Equals(args[i], "external", StringComparison.OrdinalIgnoreCase)) options.ListenExternal = true;
                     }
+                }
+                else if (string.Equals(args[i], "-noshutdown", StringComparison.OrdinalIgnoreCase))
+                {
+                    options.ShutdownOnEnter = false;
                 }
                 else
                 {

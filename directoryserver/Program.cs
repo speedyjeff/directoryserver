@@ -45,11 +45,14 @@ namespace directoryserver
             HandleIncoming(http, options);
 
             // wait
-            Console.WriteLine("<ctrl-c> or <enter> to exit");
-            Console.ReadLine();
+            Console.WriteLine($"<ctrl-c> {(options.ShutdownOnEnter ? "or <enter> " : "")}to exit");
+            if (options.ShutdownOnEnter) Console.ReadLine();
+            else while (true) Console.ReadLine();
 
             // exit
             http.Close();
+
+            Console.WriteLine("shutting down");
 
             return 0;
         }
